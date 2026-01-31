@@ -57,6 +57,9 @@ class SleepRecord(BaseModel):
 # 한국 시간대 상수
 KST = ZoneInfo("Asia/Seoul")
 
+# 정적 파일 마운트 (HTML, CSS, JS)
+app.mount("/", StaticFiles(directory=".", html=True), name="static")
+
 @app.get("/")
 async def root():
     return {"message": "Sleep Tracker API is running"}
