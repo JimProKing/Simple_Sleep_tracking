@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수면 시간 관리</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-wake {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-wake:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-sleep {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-sleep:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .records-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .records-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .records-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .records-table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card h3 {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>💤 수면 시간 관리</h1>
+            <p class="subtitle">매일의 기상/취침 시간을 기록하세요</p>
+
+            <div id="message" class="message"></div>
+
+            <div class="input-group">
+                <label for="authCode">인증 코드</label>
+                <input type="text" id="authCode" placeholder="코드를 입력하세요">
+            </div>
+
+            <div class="button-group">
+                <button class="btn-wake" onclick="recordTime('wake')">🌅 기상</button>
+                <button class="btn-sleep" onclick="recordTime('sleep')">🌙 취침</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📊 수면 기록</h2>
+            <div id="recordsContainer">
+                <div class="loading">기록을 불러오는 중...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        // 페이지 로드 시 기록 불러오기
+        window.addEventListener('DOMContentLoad', loadRecords);
+        loadRecords();
+
+        async function recordTime(type) {
+            const authCode = document.getElementById('authCode').value;
+            
+            if (!authCode) {
+                showMessage('인증 코드를 입력해주세요', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/record`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        auth_code: authCode,
+                        record_type: type
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(data.message, 'success');
+                    document.getElementById('authCode').value = '';
+                    loadRecords(); // 기록 새로고침
+                } else {
+                    showMessage(data.detail || '오류가 발생했습니다', 'error');
+                }
+            } catch (error) {
+                showMessage('서버와 통신 중 오류가 발생했습니다', 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadRecords() {
+            try {
+                const response = await fetch(`${API_URL}/records?limit=30`);
+                const data = await response.json();
+
+                if (data.success && data.records) {
+                    displayRecords(data.records);
+                } else {
+                    document.getElementById('recordsContainer').innerHTML = 
+                        '<div class="no-data">기록이 없습니다</div>';
+                }
+            } catch (error) {
+                document.getElementById('recordsContainer').innerHTML = 
+                    '<div class="no-data">기록을 불러올 수 없습니다</div>';
+                console.error('Error:', error);
+            }
+        }
+
+        function displayRecords(records) {
+            if (records.length === 0) {
+                document.getElementById('recordsContainer').innerHTML = 
+                    '<div class="no-data">기록이 없습니다</div>';
+                return;
+            }
+
+            // 평균 수면 시간 계산
+            const validDurations = records
+                .filter(r => r.sleep_duration)
+                .map(r => r.sleep_duration);
+            const avgSleep = validDurations.length > 0 
+                ? (validDurations.reduce((a, b) => a + b, 0) / validDurations.length).toFixed(1)
+                : 0;
+
+            let html = `
+                <div class="stat-card">
+                    <h3>평균 수면 시간</h3>
+                    <div class="stat-value">${avgSleep}시간</div>
+                </div>
+                <table class="records-table">
+                    <thead>
+                        <tr>
+                            <th>날짜</th>
+                            <th>기상 시간</th>
+                            <th>취침 시간</th>
+                            <th>수면 시간</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            records.forEach(record => {
+                html += `
+                    <tr>
+                        <td>${record.date}</td>
+                        <td>${record.wake_time || '-'}</td>
+                        <td>${record.sleep_time || '-'}</td>
+                        <td>${record.sleep_duration ? record.sleep_duration + '시간' : '-'}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('recordsContainer').innerHTML = html;
+        }
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

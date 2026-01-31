@@ -1,0 +1,6 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-dotenv>=1.0.0
+pydantic>=2.0
+postgrest==2.19.0          # First 2.x version — stable, no known pyiceberg issues in isolation
+httpx>=0.26.0,<0.29.0
