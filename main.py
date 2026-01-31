@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -57,12 +58,13 @@ class SleepRecord(BaseModel):
 # 한국 시간대 상수
 KST = ZoneInfo("Asia/Seoul")
 
-# 정적 파일 마운트 (HTML, CSS, JS)
-app.mount("/", StaticFiles(directory=".", html=True), name="static")
-
 @app.get("/")
 async def root():
-    return {"message": "Sleep Tracker API is running"}
+    """루트 경로에서 index.html 반환"""
+    return FileResponse("index.html")
+
+# 정적 파일 마운트 (HTML, CSS, JS)
+app.mount("/static", StaticFiles(directory="."), name="static")
 
 @app.post("/record")
 async def record_time(record: TimeRecord):
