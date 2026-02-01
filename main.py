@@ -27,6 +27,9 @@ app.add_middleware(
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
+print(f"DEBUG - SUPABASE_URL: {SUPABASE_URL}")
+print(f"DEBUG - SUPABASE_KEY: {SUPABASE_KEY[:20] if SUPABASE_KEY else 'NOT SET'}...")
+
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError("SUPABASE_URL 또는 SUPABASE_KEY가 .env에 없습니다.")
 
