@@ -8,6 +8,6 @@ services:
       - key: PYTHON_VERSION
         value: 3.11
       - key: SUPABASE_URL
-        sync: false
+        value: https://ivtotnpiopdmqjroqsui.supabase.co
       - key: SUPABASE_KEY
-        sync: false
+        value: sb_secret_6maP9Cww84Ed8uoj5hlBsw_P6L2SY9p
