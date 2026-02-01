@@ -150,6 +150,18 @@
             background: #f5f5f5;
         }
 
+        .week-separator {
+            background: #e8eef7;
+            border-top: 3px solid #667eea;
+            border-bottom: 2px solid #667eea;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .week-separator td {
+            padding: 15px 12px;
+        }
+
         .loading {
             text-align: center;
             padding: 20px;
@@ -292,6 +304,7 @@
                     <thead>
                         <tr>
                             <th>날짜</th>
+                            <th>요일</th>
                             <th>기상 시간</th>
                             <th>취침 시간</th>
                             <th>수면 시간</th>
@@ -300,10 +313,28 @@
                     <tbody>
             `;
 
-            records.forEach(record => {
+            let currentWeek = null;
+            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+
+            records.forEach((record, index) => {
+                const date = new Date(record.date + 'T00:00:00');
+                const dayOfWeek = dayNames[date.getDay()];
+                
+                // 주 단위로 구분 (월요일 기준)
+                const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+                const week = Math.floor((dayOfYear + new Date(date.getFullYear(), 0, 1).getDay()) / 7);
+                
+                if (currentWeek !== week) {
+                    if (currentWeek !== null) {
+                        html += '<tr class="week-separator"><td colspan="5"></td></tr>';
+                    }
+                    currentWeek = week;
+                }
+
                 html += `
                     <tr>
                         <td>${record.date}</td>
+                        <td>${dayOfWeek}요일</td>
                         <td>${record.wake_time || '-'}</td>
                         <td>${record.sleep_time || '-'}</td>
                         <td>${record.sleep_duration ? record.sleep_duration + '시간' : '-'}</td>
